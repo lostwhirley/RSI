@@ -84,7 +84,7 @@
       <div id="status-text"></div>
     </div>
   </div>
-  <script>const CFG={"tickers": ["AAPL", "TSLA", "NVDA", "MSFT"], "RSI_PERIOD": 14, "RSI_LOW": 30, "RSI_HIGH": 70, "alertEmail": "", "ejsPublicKey": "_4ebKuY_HrA2_jJwh", "ejsServiceId": "email_service", "ejsTemplateId": "template_jvhlh2i", "initResults": [{"ticker": "AAPL", "rsi": null, "price": null}, {"ticker": "TSLA", "rsi": null, "price": null}, {"ticker": "NVDA", "rsi": null, "price": null}, {"ticker": "MSFT", "rsi": null, "price": null}]};
+  <script>const CFG={"tickers": ["AAPL", "TSLA", "NVDA", "MSFT"], "RSI_PERIOD": 14, "RSI_LOW": 30, "RSI_HIGH": 70, "alertEmail": "x", "ejsPublicKey": "", "ejsServiceId": "", "ejsTemplateId": "", "initResults": [{"ticker": "AAPL", "rsi": null, "price": null}, {"ticker": "TSLA", "rsi": null, "price": null}, {"ticker": "NVDA", "rsi": null, "price": null}, {"ticker": "MSFT", "rsi": null, "price": null}]};
 let _timer = null, _countdown = null;
 
 function computeRSI(closes) {
@@ -240,6 +240,8 @@ async function runCheck(forceRun) {
     results[0] = Object.assign({}, results[0], { rsi: 75 });
   }
   results.forEach(r => updateCard(r.ticker, r.rsi, r.price));
+  var banner = document.getElementById("alert-banner");
+  if (banner) banner.remove();
   var alerts = results.filter(r => r.rsi !== null && (r.rsi < CFG.RSI_LOW || r.rsi > CFG.RSI_HIGH));
   var email = document.getElementById("alert-email").value.trim();
   if (alerts.length) {

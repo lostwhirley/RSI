@@ -249,6 +249,8 @@ async function runCheck(forceRun) {
     results[0] = Object.assign({}, results[0], { rsi: 75 });
   }
   results.forEach(r => updateCard(r.ticker, r.rsi, r.price));
+  var banner = document.getElementById("alert-banner");
+  if (banner) banner.remove();
   var alerts = results.filter(r => r.rsi !== null && (r.rsi < CFG.RSI_LOW || r.rsi > CFG.RSI_HIGH));
   var email = document.getElementById("alert-email").value.trim();
   if (alerts.length) {
