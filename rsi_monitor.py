@@ -94,7 +94,7 @@ def generate_dashboard(results: list[dict], market_open: bool) -> None:
     cfg_js = f"const CFG={json.dumps(cfg)};"
 
     js_logic = """
-let _timer = null, _countdown = null;
+let _timer = null, _countdown = null, _tickers = [];
 
 function computeRSI(closes) {
   var P = CFG.RSI_PERIOD;
@@ -137,9 +137,28 @@ function updateMarketBadge() {
   document.getElementById("market-text").textContent = open ? "market open" : "market closed";
 }
 
-function getTickers() {
-  return document.getElementById("tickers-input").value
-    .split(",").map(t => t.trim().toUpperCase()).filter(Boolean);
+function getTickers() { return _tickers.slice(); }
+
+function renderTickers() {
+  var chips = _tickers.map(function(t) {
+    return '<span class="ticker-chip">' + t
+      + '<button onclick="removeTicker(\'' + t + '\')">&times;</button></span>';
+  }).join('');
+  document.getElementById('ticker-tags').innerHTML = chips
+    + '<input class="ticker-input" id="ticker-input" placeholder="add…" maxlength="6">';
+  document.getElementById('ticker-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      var val = this.value.trim().toUpperCase().replace(',', '');
+      if (val && !_tickers.includes(val)) { _tickers.push(val); renderTickers(); }
+      else this.value = '';
+    }
+  });
+}
+
+function removeTicker(t) {
+  _tickers = _tickers.filter(function(x) { return x !== t; });
+  renderTickers();
 }
 
 function cardHTML(ticker, rsi, price) {
@@ -286,7 +305,8 @@ function stopMonitor() {
   var resultsMap = {};
   CFG.initResults.forEach(r => { resultsMap[r.ticker] = r; });
   renderCards(CFG.tickers, resultsMap);
-  document.getElementById("tickers-input").value = CFG.tickers.join(", ");
+  _tickers = CFG.tickers.slice();
+  renderTickers();
   document.getElementById("alert-email").value = CFG.alertEmail || "lostwhirley@gmail.com";
   updateMarketBadge();
   setInterval(updateMarketBadge, 60000);
@@ -331,6 +351,11 @@ function stopMonitor() {
     .field label {{ font-size: 12px; color: #888; display: block; margin-bottom: 4px; }}
     .field input {{ width: 100%; padding: 8px 10px; border: 0.5px solid #e0ddd6; border-radius: 8px; font-size: 14px; background: #fff; font-family: inherit; color: #1a1a1a; }}
     .field input:focus {{ outline: none; border-color: #999; }}
+    .ticker-tags {{ display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border: 0.5px solid #e0ddd6; border-radius: 8px; background: #fff; min-height: 42px; align-items: center; }}
+    .ticker-chip {{ display: inline-flex; align-items: center; gap: 3px; background: #ede9e3; border-radius: 5px; padding: 3px 7px 3px 9px; font-size: 12px; font-weight: 500; letter-spacing: .04em; }}
+    .ticker-chip button {{ background: none; border: none; cursor: pointer; color: #999; font-size: 15px; line-height: 1; padding: 0 0 0 2px; }}
+    .ticker-chip button:hover {{ color: #333; }}
+    .ticker-input {{ border: none; outline: none; font-size: 13px; padding: 2px 0; min-width: 70px; background: transparent; font-family: inherit; }}
     .buttons-row {{ display: flex; align-items: center; gap: 10px; }}
     .btn {{ padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid; font-family: inherit; background: #fff; }}
     .btn-start {{ border-color: #ccc; color: #1a1a1a; }} .btn-start:hover {{ border-color: #999; }}
@@ -363,7 +388,7 @@ function stopMonitor() {
       <div class="fields-row">
         <div class="field">
           <label>tickers</label>
-          <input type="text" id="tickers-input">
+          <div class="ticker-tags" id="ticker-tags"></div>
         </div>
         <div class="field">
           <label>alert recipient</label>
