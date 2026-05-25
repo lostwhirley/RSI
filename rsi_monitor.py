@@ -170,9 +170,10 @@ function renderCards(tickers, resultsMap) {
 
 function updateCard(ticker, rsi, price) {
   var el = document.getElementById("card-" + ticker);
-  var newEl = document.createElement("div");
-  newEl.outerHTML = cardHTML(ticker, rsi, price);
-  if (el) el.outerHTML = cardHTML(ticker, rsi, price);
+  if (!el) return;
+  var tmp = document.createElement("div");
+  tmp.innerHTML = cardHTML(ticker, rsi, price);
+  el.replaceWith(tmp.firstChild);
 }
 
 function setStatus(msg) {

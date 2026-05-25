@@ -83,7 +83,7 @@
       <div id="status-text"></div>
     </div>
   </div>
-  <script>const CFG={"tickers": ["AAPL", "TSLA", "NVDA", "MSFT"], "RSI_PERIOD": 14, "RSI_LOW": 30, "RSI_HIGH": 70, "alertEmail": "lostwhirley@gmail.com", "initResults": [{"ticker": "AAPL", "rsi": null, "price": null}, {"ticker": "TSLA", "rsi": null, "price": null}, {"ticker": "NVDA", "rsi": null, "price": null}, {"ticker": "MSFT", "rsi": null, "price": null}]};
+  <script>const CFG={"tickers": ["AAPL", "TSLA", "NVDA", "MSFT"], "RSI_PERIOD": 14, "RSI_LOW": 30, "RSI_HIGH": 70, "alertEmail": "test@test.com", "initResults": [{"ticker": "AAPL", "rsi": null, "price": null}, {"ticker": "TSLA", "rsi": null, "price": null}, {"ticker": "NVDA", "rsi": null, "price": null}, {"ticker": "MSFT", "rsi": null, "price": null}]};
 let _timer = null, _countdown = null;
 
 function computeRSI(closes) {
@@ -163,9 +163,10 @@ function renderCards(tickers, resultsMap) {
 
 function updateCard(ticker, rsi, price) {
   var el = document.getElementById("card-" + ticker);
-  var newEl = document.createElement("div");
-  newEl.outerHTML = cardHTML(ticker, rsi, price);
-  if (el) el.outerHTML = cardHTML(ticker, rsi, price);
+  if (!el) return;
+  var tmp = document.createElement("div");
+  tmp.innerHTML = cardHTML(ticker, rsi, price);
+  el.replaceWith(tmp.firstChild);
 }
 
 function setStatus(msg) {
