@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RSI Monitor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f2; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }
+    .container { max-width: 860px; margin: 0 auto; }
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 8px; }
+    h1 { font-size: 22px; font-weight: 500; }
+    .market-badge { font-size: 12px; display: flex; align-items: center; gap: 6px; }
+    .market-badge .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .market-badge.open { color: #3B6D11; } .market-badge.open .dot { background: #639922; }
+    .market-badge.closed { color: #888; } .market-badge.closed .dot { background: #bbb; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 2rem; }
+    .card { background: #fff; border: 0.5px solid #e0ddd6; border-radius: 12px; padding: 16px 18px; }
+    .card.overbought { background: #FCEBEB; border-color: #F09595; }
+    .card.oversold   { background: #EAF3DE; border-color: #C0DD97; }
+    .card-ticker { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #888; margin-bottom: 8px; }
+    .card-rsi { font-size: 32px; font-weight: 500; font-family: "SF Mono", "Fira Code", monospace; line-height: 1; margin-bottom: 4px; }
+    .card-rsi.over    { color: #A32D2D; }
+    .card-rsi.under   { color: #3B6D11; }
+    .card-rsi.neutral { color: #555; }
+    .card-rsi.empty   { color: #bbb; }
+    .card-signal { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+    .sig-over    { color: #A32D2D; } .sig-under { color: #3B6D11; }
+    .sig-neutral { color: #888; }    .muted { color: #bbb; }
+    .card-price { font-size: 12px; color: #888; font-family: "SF Mono", "Fira Code", monospace; margin-top: 2px; }
+    footer { font-size: 12px; color: #aaa; border-top: 0.5px solid #e0ddd6; padding-top: 1rem; }
+    @media (max-width: 480px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>RSI monitor</h1>
+      <span class="market-badge closed"><span class="dot"></span>market closed</span>
+    </header>
+    <div class="cards">
+      
+            <div class="card">
+              <div class="card-ticker">AAPL</div>
+              <div class="card-rsi empty">—</div>
+              <div class="card-signal muted">no data</div>
+            </div>
+
+            <div class="card">
+              <div class="card-ticker">TSLA</div>
+              <div class="card-rsi empty">—</div>
+              <div class="card-signal muted">no data</div>
+            </div>
+
+            <div class="card">
+              <div class="card-ticker">NVDA</div>
+              <div class="card-rsi empty">—</div>
+              <div class="card-signal muted">no data</div>
+            </div>
+
+            <div class="card">
+              <div class="card-ticker">MSFT</div>
+              <div class="card-rsi empty">—</div>
+              <div class="card-signal muted">no data</div>
+            </div>
+    </div>
+    <footer>Last updated: May 24, 2026 at 09:03 PM ET &nbsp;·&nbsp; RSI period: 14 &nbsp;·&nbsp; Thresholds: &lt;30 oversold, &gt;70 overbought</footer>
+  </div>
+</body>
+</html>
