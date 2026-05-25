@@ -81,12 +81,15 @@ def generate_dashboard(results: list[dict], market_open: bool) -> None:
         for r in results
     ]
     cfg = {
-        "tickers":    TICKERS,
-        "RSI_PERIOD": RSI_PERIOD,
-        "RSI_LOW":    RSI_LOW,
-        "RSI_HIGH":   RSI_HIGH,
-        "alertEmail": os.environ.get("EMAIL_TO", ""),
-        "initResults": init_results,
+        "tickers":          TICKERS,
+        "RSI_PERIOD":       RSI_PERIOD,
+        "RSI_LOW":          RSI_LOW,
+        "RSI_HIGH":         RSI_HIGH,
+        "alertEmail":       os.environ.get("EMAIL_TO", ""),
+        "ejsPublicKey":     os.environ.get("EMAILJS_PUBLIC_KEY", ""),
+        "ejsServiceId":     os.environ.get("EMAILJS_SERVICE_ID", ""),
+        "ejsTemplateId":    os.environ.get("EMAILJS_TEMPLATE_ID", ""),
+        "initResults":      init_results,
     }
     cfg_js = f"const CFG={json.dumps(cfg)};"
 
@@ -180,7 +183,7 @@ function setStatus(msg) {
   document.getElementById("status-text").textContent = msg;
 }
 
-function showAlertBanner(alerts, email, testMode) {
+function showAlertBanner(alerts, email, testMode, sent) {
   var banner = document.getElementById("alert-banner");
   if (!banner) {
     banner = document.createElement("div");
@@ -190,9 +193,30 @@ function showAlertBanner(alerts, email, testMode) {
   var lines = alerts.map(a =>
     a.ticker + ": RSI " + a.rsi + " (" + (a.rsi > CFG.RSI_HIGH ? "overbought" : "oversold") + ")"
   ).join(", ");
+  var emailNote = email
+    ? (sent ? " \\u00b7 email sent to " + email : " \\u00b7 email failed (check EmailJS config)")
+    : "";
   banner.className = "alert-banner" + (testMode ? " test" : "");
-  banner.textContent = (testMode ? "[test] " : "") + "Alert \\u2014 " + lines
-    + (email ? " \\u00b7 would email " + email : "");
+  banner.textContent = (testMode ? "[test] " : "") + "Alert \\u2014 " + lines + emailNote;
+}
+
+async function sendAlertEmail(alerts, email, testMode) {
+  if (!CFG.ejsPublicKey || !CFG.ejsServiceId || !CFG.ejsTemplateId || !email) return false;
+  var lines = alerts.map(a =>
+    a.ticker + ": RSI " + a.rsi + " (" + (a.rsi > CFG.RSI_HIGH ? "overbought" : "oversold") + ")"
+  ).join("\\n");
+  try {
+    await emailjs.send(CFG.ejsServiceId, CFG.ejsTemplateId, {
+      to_email: email,
+      subject:  (testMode ? "[TEST] " : "") + "RSI Alert",
+      message:  "The following stocks crossed RSI thresholds:\\n\\n" + lines
+                + "\\n\\nThresholds: oversold < " + CFG.RSI_LOW + ", overbought > " + CFG.RSI_HIGH
+    }, CFG.ejsPublicKey);
+    return true;
+  } catch(e) {
+    console.error("EmailJS error:", e);
+    return false;
+  }
 }
 
 function startCountdown(secs) {
@@ -227,7 +251,10 @@ async function runCheck(forceRun) {
   results.forEach(r => updateCard(r.ticker, r.rsi, r.price));
   var alerts = results.filter(r => r.rsi !== null && (r.rsi < CFG.RSI_LOW || r.rsi > CFG.RSI_HIGH));
   var email = document.getElementById("alert-email").value.trim();
-  if (alerts.length) showAlertBanner(alerts, email, testMode);
+  if (alerts.length) {
+    var sent = await sendAlertEmail(alerts, email, testMode);
+    showAlertBanner(alerts, email, testMode, sent);
+  }
   var now = new Date().toLocaleTimeString("en-US",
     { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit" });
   setStatus("last checked " + now + " ET" + (testMode ? " \\u00b7 test mode" : ""));
@@ -272,6 +299,7 @@ function stopMonitor() {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RSI Monitor</title>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
     *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
     body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f2; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }}
