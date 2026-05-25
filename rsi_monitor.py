@@ -367,7 +367,7 @@ function stopMonitor() {
         </div>
         <div class="field">
           <label>alert recipient</label>
-          <input type="text" id="alert-email">
+          <input type="text" id="alert-email" value="{cfg['alertEmail'] or 'lostwhirley@gmail.com'}">
         </div>
       </div>
       <div class="buttons-row">
