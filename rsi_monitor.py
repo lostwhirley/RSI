@@ -165,7 +165,8 @@ def generate_dashboard(results: list[dict], market_open: bool) -> None:
 
 
 def main() -> None:
-    market_open = is_market_open()
+    test_mode   = os.environ.get("TEST_MODE", "").lower() == "true"
+    market_open = test_mode or is_market_open()
     results = []
 
     if not market_open:
