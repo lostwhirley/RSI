@@ -85,7 +85,7 @@ def generate_dashboard(results: list[dict], market_open: bool) -> None:
         "RSI_PERIOD":       RSI_PERIOD,
         "RSI_LOW":          RSI_LOW,
         "RSI_HIGH":         RSI_HIGH,
-        "alertEmail":       os.environ.get("EMAIL_TO", ""),
+        "alertEmail":       os.environ.get("EMAIL_TO", "lostwhirley@gmail.com"),
         "ejsPublicKey":     os.environ.get("EMAILJS_PUBLIC_KEY", ""),
         "ejsServiceId":     os.environ.get("EMAILJS_SERVICE_ID", ""),
         "ejsTemplateId":    os.environ.get("EMAILJS_TEMPLATE_ID", ""),
