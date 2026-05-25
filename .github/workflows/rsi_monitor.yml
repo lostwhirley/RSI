@@ -28,7 +28,7 @@ jobs:
           EMAIL_FROM:     ${{ secrets.EMAIL_FROM }}
           EMAIL_TO:       ${{ secrets.EMAIL_TO }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-run: python rsi_monitor.py
+        run: python rsi_monitor.py
 
       - name: Commit dashboard
         run: |
