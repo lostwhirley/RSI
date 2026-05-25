@@ -1,3 +1,4 @@
+import json
 import os
 import smtplib
 import pytz
@@ -75,41 +76,201 @@ def send_email(alerts: list[dict]) -> None:
 
 
 def generate_dashboard(results: list[dict], market_open: bool) -> None:
-    now_et = datetime.now(pytz.timezone("America/New_York"))
-    now_str = now_et.strftime("%B %d, %Y at %I:%M %p ET")
+    init_results = [
+        {"ticker": r["ticker"], "rsi": r.get("rsi"), "price": r.get("price")}
+        for r in results
+    ]
+    cfg = {
+        "tickers":    TICKERS,
+        "RSI_PERIOD": RSI_PERIOD,
+        "RSI_LOW":    RSI_LOW,
+        "RSI_HIGH":   RSI_HIGH,
+        "alertEmail": os.environ.get("EMAIL_TO", ""),
+        "initResults": init_results,
+    }
+    cfg_js = f"const CFG={json.dumps(cfg)};"
 
-    def card(r):
-        rsi   = r.get("rsi")
-        price = r.get("price")
-        ticker = r["ticker"]
+    js_logic = """
+let _timer = null, _countdown = null;
 
-        if rsi is None:
-            return f"""
-            <div class="card">
-              <div class="card-ticker">{ticker}</div>
-              <div class="card-rsi empty">—</div>
-              <div class="card-signal muted">no data</div>
-            </div>"""
+function computeRSI(closes) {
+  var P = CFG.RSI_PERIOD;
+  if (closes.length < P + 1) return null;
+  var d = closes.slice(1).map((c, i) => c - closes[i]);
+  var ag = 0, al = 0;
+  for (var i = 0; i < P; i++) { ag += Math.max(d[i], 0); al += Math.max(-d[i], 0); }
+  ag /= P; al /= P;
+  for (var i = P; i < d.length; i++) {
+    ag = (ag * (P - 1) + Math.max(d[i], 0)) / P;
+    al = (al * (P - 1) + Math.max(-d[i], 0)) / P;
+  }
+  return al === 0 ? 100 : +(100 - 100 / (1 + ag / al)).toFixed(2);
+}
 
-        if rsi > RSI_HIGH:
-            card_cls, rsi_cls, signal, sig_cls = "card overbought", "over", "overbought", "sig-over"
-        elif rsi < RSI_LOW:
-            card_cls, rsi_cls, signal, sig_cls = "card oversold", "under", "oversold", "sig-under"
-        else:
-            card_cls, rsi_cls, signal, sig_cls = "card", "neutral", "neutral", "sig-neutral"
+async function fetchRSI(sym) {
+  var base = "https://query1.finance.yahoo.com/v8/finance/chart/" + sym
+    + "?interval=5m&range=5d&includePrePost=false";
+  var data;
+  try {
+    var r = await fetch(base);
+    if (!r.ok) throw 0;
+    data = await r.json();
+  } catch(e) {
+    var r = await fetch("https://corsproxy.io/?" + encodeURIComponent(base));
+    data = await r.json();
+  }
+  try {
+    var cl = data.chart.result[0].indicators.quote[0].close.filter(c => c != null);
+    return { ticker: sym, rsi: computeRSI(cl), price: +(cl.at(-1).toFixed(2)) };
+  } catch(e) {
+    return { ticker: sym, rsi: null, price: null };
+  }
+}
 
-        price_html = f'<div class="card-price">${price}</div>' if price else ""
-        return f"""
-            <div class="{card_cls}">
-              <div class="card-ticker">{ticker}</div>
-              <div class="card-rsi {rsi_cls}">{rsi}</div>
-              <div class="card-signal {sig_cls}">{signal}</div>
-              {price_html}
-            </div>"""
+function isMarketOpen() {
+  var et = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
+  if (et.getDay() === 0 || et.getDay() === 6) return false;
+  var mins = et.getHours() * 60 + et.getMinutes();
+  return mins >= 9 * 60 + 30 && mins < 16 * 60;
+}
 
-    cards_html = "\n".join(card(r) for r in results)
-    market_status = "market open" if market_open else "market closed"
-    market_cls    = "open" if market_open else "closed"
+function updateMarketBadge() {
+  var open = isMarketOpen();
+  var el = document.getElementById("market-badge");
+  el.className = "market-badge " + (open ? "open" : "closed");
+  document.getElementById("market-text").textContent = open ? "market open" : "market closed";
+}
+
+function getTickers() {
+  return document.getElementById("tickers-input").value
+    .split(",").map(t => t.trim().toUpperCase()).filter(Boolean);
+}
+
+function cardHTML(ticker, rsi, price) {
+  var cls = "card", rsiCls = "card-rsi empty", rsiVal = "\\u2014",
+      sigCls = "card-signal muted", sigVal = "";
+  if (rsi !== null && rsi !== undefined) {
+    if (rsi > CFG.RSI_HIGH) {
+      cls = "card overbought"; rsiCls = "card-rsi over";
+      sigCls = "card-signal sig-over"; sigVal = "overbought";
+    } else if (rsi < CFG.RSI_LOW) {
+      cls = "card oversold"; rsiCls = "card-rsi under";
+      sigCls = "card-signal sig-under"; sigVal = "oversold";
+    } else {
+      rsiCls = "card-rsi neutral"; sigCls = "card-signal sig-neutral"; sigVal = "neutral";
+    }
+    rsiVal = rsi;
+  }
+  var priceHTML = price ? '<div class="card-price">$' + price + '</div>' : "";
+  return '<div class="' + cls + '" id="card-' + ticker + '">'
+    + '<div class="card-ticker">' + ticker + '</div>'
+    + '<div class="' + rsiCls + '">' + rsiVal + '</div>'
+    + '<div class="' + sigCls + '">' + sigVal + '</div>'
+    + priceHTML + '</div>';
+}
+
+function renderCards(tickers, resultsMap) {
+  document.getElementById("cards-grid").innerHTML = tickers
+    .map(t => { var r = (resultsMap || {})[t] || {}; return cardHTML(t, r.rsi, r.price); })
+    .join("");
+}
+
+function updateCard(ticker, rsi, price) {
+  var el = document.getElementById("card-" + ticker);
+  var newEl = document.createElement("div");
+  newEl.outerHTML = cardHTML(ticker, rsi, price);
+  if (el) el.outerHTML = cardHTML(ticker, rsi, price);
+}
+
+function setStatus(msg) {
+  document.getElementById("status-text").textContent = msg;
+}
+
+function showAlertBanner(alerts, email, testMode) {
+  var banner = document.getElementById("alert-banner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "alert-banner";
+    document.getElementById("controls-section").insertAdjacentElement("beforebegin", banner);
+  }
+  var lines = alerts.map(a =>
+    a.ticker + ": RSI " + a.rsi + " (" + (a.rsi > CFG.RSI_HIGH ? "overbought" : "oversold") + ")"
+  ).join(", ");
+  banner.className = "alert-banner" + (testMode ? " test" : "");
+  banner.textContent = (testMode ? "[test] " : "") + "Alert \\u2014 " + lines
+    + (email ? " \\u00b7 would email " + email : "");
+}
+
+function startCountdown(secs) {
+  clearInterval(_countdown);
+  var rem = secs;
+  var el = document.getElementById("countdown");
+  var tick = function() {
+    if (rem < 0) { clearInterval(_countdown); el.textContent = ""; return; }
+    el.textContent = "next in " + Math.floor(rem / 60) + ":" + String(rem % 60).padStart(2, "0");
+    rem--;
+  };
+  tick();
+  _countdown = setInterval(tick, 1000);
+}
+
+async function runCheck(forceRun) {
+  var testMode = document.getElementById("test-mode").checked;
+  var tickers = getTickers();
+  if (!forceRun && !testMode && !isMarketOpen()) {
+    setStatus("market closed");
+    return;
+  }
+  setStatus("fetching\\u2026");
+  tickers.forEach(t => {
+    var c = document.getElementById("card-" + t);
+    if (c) c.querySelector(".card-rsi").textContent = "\\u2026";
+  });
+  var results = await Promise.all(tickers.map(fetchRSI));
+  if (testMode && results.length > 0) {
+    results[0] = Object.assign({}, results[0], { rsi: 75 });
+  }
+  results.forEach(r => updateCard(r.ticker, r.rsi, r.price));
+  var alerts = results.filter(r => r.rsi !== null && (r.rsi < CFG.RSI_LOW || r.rsi > CFG.RSI_HIGH));
+  var email = document.getElementById("alert-email").value.trim();
+  if (alerts.length) showAlertBanner(alerts, email, testMode);
+  var now = new Date().toLocaleTimeString("en-US",
+    { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit" });
+  setStatus("last checked " + now + " ET" + (testMode ? " \\u00b7 test mode" : ""));
+}
+
+function startMonitor() {
+  var tickers = getTickers();
+  var resultsMap = {};
+  CFG.initResults.forEach(r => { resultsMap[r.ticker] = r; });
+  renderCards(tickers, resultsMap);
+  document.getElementById("start-btn").style.display = "none";
+  document.getElementById("running-controls").style.display = "flex";
+  runCheck(false);
+  startCountdown(5 * 60);
+  _timer = setInterval(function() { runCheck(false); startCountdown(5 * 60); }, 5 * 60 * 1000);
+}
+
+function stopMonitor() {
+  clearInterval(_timer); clearInterval(_countdown); _timer = null;
+  document.getElementById("countdown").textContent = "";
+  document.getElementById("start-btn").style.display = "";
+  document.getElementById("running-controls").style.display = "none";
+  setStatus("");
+}
+
+(function init() {
+  var resultsMap = {};
+  CFG.initResults.forEach(r => { resultsMap[r.ticker] = r; });
+  renderCards(CFG.tickers, resultsMap);
+  document.getElementById("tickers-input").value = CFG.tickers.join(", ");
+  document.getElementById("alert-email").value = CFG.alertEmail;
+  updateMarketBadge();
+  setInterval(updateMarketBadge, 60000);
+})();
+"""
+
+    script_tag = f"<script>{cfg_js}{js_logic}</script>"
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -120,42 +281,83 @@ def generate_dashboard(results: list[dict], market_open: bool) -> None:
   <style>
     *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
     body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f2; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }}
-    .container {{ max-width: 860px; margin: 0 auto; }}
+    .container {{ max-width: 900px; margin: 0 auto; }}
     header {{ display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 8px; }}
     h1 {{ font-size: 22px; font-weight: 500; }}
-    .market-badge {{ font-size: 12px; display: flex; align-items: center; gap: 6px; }}
-    .market-badge .dot {{ width: 8px; height: 8px; border-radius: 50%; display: inline-block; }}
+    .header-right {{ display: flex; align-items: center; gap: 14px; }}
+    .market-badge {{ font-size: 12px; display: flex; align-items: center; gap: 6px; color: #888; }}
+    .market-badge .dot {{ width: 8px; height: 8px; border-radius: 50%; background: #bbb; display: inline-block; }}
     .market-badge.open {{ color: #3B6D11; }} .market-badge.open .dot {{ background: #639922; }}
-    .market-badge.closed {{ color: #888; }} .market-badge.closed .dot {{ background: #bbb; }}
-    .cards {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 2rem; }}
+    .test-label {{ font-size: 12px; display: flex; align-items: center; gap: 5px; cursor: pointer; color: #555; user-select: none; }}
+    .test-label input {{ cursor: pointer; accent-color: #4A90D9; }}
+    .cards {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }}
     .card {{ background: #fff; border: 0.5px solid #e0ddd6; border-radius: 12px; padding: 16px 18px; }}
     .card.overbought {{ background: #FCEBEB; border-color: #F09595; }}
     .card.oversold   {{ background: #EAF3DE; border-color: #C0DD97; }}
     .card-ticker {{ font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #888; margin-bottom: 8px; }}
     .card-rsi {{ font-size: 32px; font-weight: 500; font-family: "SF Mono", "Fira Code", monospace; line-height: 1; margin-bottom: 4px; }}
-    .card-rsi.over    {{ color: #A32D2D; }}
-    .card-rsi.under   {{ color: #3B6D11; }}
-    .card-rsi.neutral {{ color: #555; }}
-    .card-rsi.empty   {{ color: #bbb; }}
+    .card-rsi.over    {{ color: #A32D2D; }} .card-rsi.under   {{ color: #3B6D11; }}
+    .card-rsi.neutral {{ color: #555; }}    .card-rsi.empty   {{ color: #bbb; }}
     .card-signal {{ font-size: 11px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }}
-    .sig-over    {{ color: #A32D2D; }} .sig-under {{ color: #3B6D11; }}
-    .sig-neutral {{ color: #888; }}    .muted {{ color: #bbb; }}
+    .sig-over {{ color: #A32D2D; }} .sig-under {{ color: #3B6D11; }} .sig-neutral {{ color: #888; }} .muted {{ color: #bbb; }}
     .card-price {{ font-size: 12px; color: #888; font-family: "SF Mono", "Fira Code", monospace; margin-top: 2px; }}
-    footer {{ font-size: 12px; color: #aaa; border-top: 0.5px solid #e0ddd6; padding-top: 1rem; }}
-    @media (max-width: 480px) {{ .cards {{ grid-template-columns: repeat(2, 1fr); }} }}
+    .divider {{ border: none; border-top: 0.5px solid #e0ddd6; margin-bottom: 1.5rem; }}
+    .controls {{ display: flex; flex-direction: column; gap: 12px; }}
+    .fields-row {{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }}
+    .field label {{ font-size: 12px; color: #888; display: block; margin-bottom: 4px; }}
+    .field input {{ width: 100%; padding: 8px 10px; border: 0.5px solid #e0ddd6; border-radius: 8px; font-size: 14px; background: #fff; font-family: inherit; color: #1a1a1a; }}
+    .field input:focus {{ outline: none; border-color: #999; }}
+    .buttons-row {{ display: flex; align-items: center; gap: 10px; }}
+    .btn {{ padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid; font-family: inherit; background: #fff; }}
+    .btn-start {{ border-color: #ccc; color: #1a1a1a; }} .btn-start:hover {{ border-color: #999; }}
+    .btn-stop  {{ border-color: #E05050; color: #C0392B; }} .btn-stop:hover {{ background: #FFF5F5; }}
+    .btn-check {{ border-color: #ccc; color: #1a1a1a; }} .btn-check:hover {{ border-color: #999; }}
+    #running-controls {{ display: none; align-items: center; gap: 10px; }}
+    #countdown {{ font-size: 13px; color: #888; }}
+    #status-text {{ font-size: 12px; color: #aaa; }}
+    .alert-banner {{ background: #FCEBEB; border: 1px solid #F09595; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #A32D2D; margin-bottom: 1rem; }}
+    .alert-banner.test {{ background: #FFF8E8; border-color: #F0C070; color: #8A6000; }}
+    @media (max-width: 520px) {{ .fields-row {{ grid-template-columns: 1fr; }} }}
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <h1>RSI monitor</h1>
-      <span class="market-badge {market_cls}"><span class="dot"></span>{market_status}</span>
+      <div class="header-right">
+        <label class="test-label">
+          <input type="checkbox" id="test-mode"> test mode
+        </label>
+        <span class="market-badge closed" id="market-badge">
+          <span class="dot"></span><span id="market-text">market closed</span>
+        </span>
+      </div>
     </header>
-    <div class="cards">
-      {cards_html}
+    <div class="cards" id="cards-grid"></div>
+    <hr class="divider">
+    <div class="controls" id="controls-section">
+      <div class="fields-row">
+        <div class="field">
+          <label>tickers</label>
+          <input type="text" id="tickers-input">
+        </div>
+        <div class="field">
+          <label>alert recipient</label>
+          <input type="text" id="alert-email">
+        </div>
+      </div>
+      <div class="buttons-row">
+        <button class="btn btn-start" id="start-btn" onclick="startMonitor()">Start</button>
+        <div id="running-controls">
+          <button class="btn btn-stop" onclick="stopMonitor()">Stop</button>
+          <button class="btn btn-check" onclick="runCheck(true)">Check now</button>
+          <span id="countdown"></span>
+        </div>
+      </div>
+      <div id="status-text"></div>
     </div>
-    <footer>Last updated: {now_str} &nbsp;·&nbsp; RSI period: {RSI_PERIOD} &nbsp;·&nbsp; Thresholds: &lt;{RSI_LOW} oversold, &gt;{RSI_HIGH} overbought</footer>
   </div>
+  {script_tag}
 </body>
 </html>"""
 
@@ -165,8 +367,7 @@ def generate_dashboard(results: list[dict], market_open: bool) -> None:
 
 
 def main() -> None:
-    test_mode   = os.environ.get("TEST_MODE", "").lower() == "true"
-    market_open = test_mode or is_market_open()
+    market_open = is_market_open()
     results = []
 
     if not market_open:
