@@ -287,7 +287,7 @@ function stopMonitor() {
   CFG.initResults.forEach(r => { resultsMap[r.ticker] = r; });
   renderCards(CFG.tickers, resultsMap);
   document.getElementById("tickers-input").value = CFG.tickers.join(", ");
-  document.getElementById("alert-email").value = CFG.alertEmail;
+  document.getElementById("alert-email").value = CFG.alertEmail || "lostwhirley@gmail.com";
   updateMarketBadge();
   setInterval(updateMarketBadge, 60000);
 })();
