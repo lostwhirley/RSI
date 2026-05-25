@@ -8,7 +8,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 # --- Configure these ---
-TICKERS    = ["AAPL", "TSLA", "NVDA", "MSFT"]
+TICKERS    = ["AAPL", "AMZN", "GDXU", "GGLL", "META", "MUU", "MSFT", "NVDA", "SPXL", "TQQQ", "TSM", "TSLA"]
 RSI_PERIOD = 14
 RSI_LOW    = 30
 RSI_HIGH   = 70
