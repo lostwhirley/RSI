@@ -137,8 +137,9 @@ function getTickers() { return _tickers.slice(); }
 
 function renderTickers() {
   var chips = _tickers.map(function(t) {
+    var onclick = "removeTicker('" + t + "')";
     return '<span class="ticker-chip">' + t
-      + '<button onclick="removeTicker('' + t + '')">&times;</button></span>';
+      + '<button onclick="' + onclick + '">&times;</button></span>';
   }).join('');
   document.getElementById('ticker-tags').innerHTML = chips
     + '<input class="ticker-input" id="ticker-input" placeholder="add…" maxlength="6">';
