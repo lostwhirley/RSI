@@ -110,16 +110,9 @@ function computeRSI(closes) {
 async function fetchRSI(sym) {
   var base = "https://query1.finance.yahoo.com/v8/finance/chart/" + sym
     + "?interval=5m&range=5d&includePrePost=false";
-  var data;
   try {
-    var r = await fetch(base);
-    if (!r.ok) throw 0;
-    data = await r.json();
-  } catch(e) {
     var r = await fetch("https://corsproxy.io/?" + encodeURIComponent(base));
-    data = await r.json();
-  }
-  try {
+    var data = await r.json();
     var cl = data.chart.result[0].indicators.quote[0].close.filter(c => c != null);
     return { ticker: sym, rsi: computeRSI(cl), price: +(cl.at(-1).toFixed(2)) };
   } catch(e) {
