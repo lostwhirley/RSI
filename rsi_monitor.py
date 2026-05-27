@@ -117,7 +117,7 @@ async function fetchRSI(sym) {
     var r = await fetch("https://corsproxy.io/?" + encodeURIComponent(base));
     var data = await r.json();
     var cl = data.chart.result[0].indicators.quote[0].close.filter(c => c != null);
-    return { ticker: sym, rsi: computeRSI(cl), price: +(cl.at(-1).toFixed(2)) };
+    return { ticker: sym, rsi: computeRSI(cl), price: +(cl.at(-1).toFixed(2)), closes: cl };
   } catch(e) {
     return { ticker: sym, rsi: null, price: null };
   }
@@ -199,6 +199,58 @@ function updateCard(ticker, rsi, price) {
   el.replaceWith(tmp.firstChild);
 }
 
+function sparklineSVG(closes) {
+  var w = 120, h = 44, pad = 2;
+  if (!closes || closes.length < 2) {
+    return '<svg class="chart-sparkline" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">'
+      + '<line x1="0" y1="22" x2="' + w + '" y2="22" stroke="#e8e6e0" stroke-width="1"/></svg>';
+  }
+  var min = Math.min.apply(null, closes), max = Math.max.apply(null, closes);
+  var range = max - min || 1;
+  var pts = closes.map(function(c, i) {
+    var x = (i / (closes.length - 1)) * w;
+    var y = pad + (h - pad * 2) * (1 - (c - min) / range);
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  }).join(' ');
+  var stroke = closes[closes.length - 1] >= closes[0] ? '#639922' : '#A32D2D';
+  return '<svg class="chart-sparkline" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">'
+    + '<polyline points="' + pts + '" fill="none" stroke="' + stroke
+    + '" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+}
+
+function chartCardHTML(ticker, closes, rsi, price) {
+  var cls = 'chart-card';
+  if (rsi !== null && rsi !== undefined) {
+    if (rsi > CFG.RSI_HIGH) cls += ' chart-overbought';
+    else if (rsi < CFG.RSI_LOW) cls += ' chart-oversold';
+  }
+  var priceStr = price ? '$' + price : '';
+  var rsiStr = (rsi !== null && rsi !== undefined) ? 'RSI ' + rsi : '';
+  return '<div class="' + cls + '" id="chart-' + ticker + '">'
+    + '<div class="chart-card-header"><span class="chart-label">' + ticker + '</span>'
+    + '<span class="chart-meta">' + priceStr + '</span></div>'
+    + sparklineSVG(closes)
+    + (rsiStr ? '<div class="chart-rsi-label">' + rsiStr + '</div>' : '')
+    + '</div>';
+}
+
+function renderCharts(tickers, resultsMap) {
+  var el = document.getElementById('chart-grid');
+  if (!el) return;
+  el.innerHTML = tickers.map(function(t) {
+    var r = (resultsMap || {})[t] || {};
+    return chartCardHTML(t, r.closes, r.rsi, r.price);
+  }).join('');
+}
+
+function updateChart(ticker, closes, rsi, price) {
+  var el = document.getElementById('chart-' + ticker);
+  if (!el) return;
+  var tmp = document.createElement('div');
+  tmp.innerHTML = chartCardHTML(ticker, closes, rsi, price);
+  el.replaceWith(tmp.firstChild);
+}
+
 function setStatus(msg) {
   document.getElementById("status-text").textContent = msg;
 }
@@ -269,6 +321,7 @@ async function runCheck(forceRun) {
     results[0] = Object.assign({}, results[0], { rsi: 75 });
   }
   results.forEach(r => updateCard(r.ticker, r.rsi, r.price));
+  results.forEach(r => updateChart(r.ticker, r.closes, r.rsi, r.price));
   var banner = document.getElementById("alert-banner");
   if (banner) banner.remove();
   var alerts = results.filter(r => r.rsi !== null && (r.rsi < CFG.RSI_LOW || r.rsi > CFG.RSI_HIGH));
@@ -306,6 +359,7 @@ function stopMonitor() {
   var resultsMap = {};
   CFG.initResults.forEach(r => { resultsMap[r.ticker] = r; });
   renderCards(CFG.tickers, resultsMap);
+  renderCharts(CFG.tickers, resultsMap);
   _tickers = CFG.tickers.slice();
   renderTickers();
   document.getElementById("alert-email").value = CFG.alertEmail || "lostwhirley@gmail.com";
@@ -368,6 +422,16 @@ function stopMonitor() {
     .alert-banner {{ background: #FCEBEB; border: 1px solid #F09595; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #A32D2D; margin-bottom: 1rem; }}
     .alert-banner.test {{ background: #FFF8E8; border-color: #F0C070; color: #8A6000; }}
     @media (max-width: 520px) {{ .fields-row {{ grid-template-columns: 1fr; }} }}
+    .chart-section {{ margin-top: 1.5rem; }}
+    .chart-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }}
+    .chart-card {{ background: #fff; border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 10px 12px 8px; }}
+    .chart-card.chart-overbought {{ background: #FCEBEB; border-color: #F09595; }}
+    .chart-card.chart-oversold {{ background: #EAF3DE; border-color: #C0DD97; }}
+    .chart-card-header {{ display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }}
+    .chart-label {{ font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #888; }}
+    .chart-meta {{ font-size: 10px; color: #aaa; font-family: "SF Mono", "Fira Code", monospace; }}
+    .chart-sparkline {{ width: 100%; height: 44px; display: block; }}
+    .chart-rsi-label {{ font-size: 10px; color: #aaa; text-align: right; margin-top: 3px; }}
   </style>
 </head>
 <body>
@@ -405,6 +469,9 @@ function stopMonitor() {
         </div>
       </div>
       <div id="status-text"></div>
+    </div>
+    <div class="chart-section">
+      <div class="chart-grid" id="chart-grid"></div>
     </div>
   </div>
   {script_tag}
