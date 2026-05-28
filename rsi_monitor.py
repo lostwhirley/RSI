@@ -254,7 +254,6 @@ function chartCardHTML(ticker, closes, rsi, price) {
     + '<span class="chart-meta">' + priceStr + '</span></div>'
     + sparklineSVG(closes)
     + (rsiStr ? '<div class="chart-rsi-label">' + rsiStr + '</div>' : '')
-    + '<div class="chart-news" id="news-' + ticker + '" style="display:none"></div>'
     + '</div>';
 }
 
@@ -334,20 +333,27 @@ async function fetchNews(ticker) {
 }
 
 async function loadAllNews(tickers) {
-  await Promise.all(tickers.map(async function(t) {
+  var results = await Promise.all(tickers.map(async function(t) {
     var articles = await fetchNews(t);
-    var el = document.getElementById('news-' + t);
-    if (!el) return;
-    if (!articles.length) return;
-    el.innerHTML = articles.map(function(a) {
+    return { ticker: t, articles: articles };
+  }));
+  var withNews = results.filter(function(r) { return r.articles.length > 0; });
+  var grid = document.getElementById('news-grid');
+  var section = document.getElementById('news-section');
+  if (!grid || !section) return;
+  if (!withNews.length) { section.style.display = 'none'; return; }
+  grid.innerHTML = withNews.map(function(r) {
+    var items = r.articles.map(function(a) {
       var meta = (a.publisher || '') + (a.providerPublishTime ? ' · ' + timeAgo(a.providerPublishTime) : '');
       return '<a href="' + a.link + '" target="_blank" rel="noopener" class="news-item">'
         + '<span class="news-title">' + a.title + '</span>'
         + '<span class="news-meta">' + meta + '</span>'
         + '</a>';
     }).join('');
-    el.style.display = '';
-  }));
+    return '<div class="news-card"><div class="news-card-ticker">' + r.ticker
+      + '</div><div class="news-items">' + items + '</div></div>';
+  }).join('');
+  section.style.display = '';
 }
 
 function startCountdown(secs) {
@@ -499,12 +505,15 @@ function stopMonitor() {
     .chart-meta {{ font-size: 10px; color: #aaa; font-family: "SF Mono", "Fira Code", monospace; }}
     .chart-sparkline {{ width: 100%; height: 44px; display: block; }}
     .chart-rsi-label {{ font-size: 10px; color: #aaa; text-align: right; margin-top: 3px; }}
-    .chart-news {{ margin-top: 8px; border-top: 0.5px solid #e8e5de; padding-top: 8px; display: flex; flex-direction: column; gap: 7px; }}
+    .news-section {{ margin-top: 1.5rem; }}
+    .news-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }}
+    .news-card {{ background: #fff; border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 10px 12px; }}
+    .news-card-ticker {{ font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #888; margin-bottom: 8px; }}
+    .news-items {{ display: flex; flex-direction: column; gap: 8px; }}
     .news-item {{ display: block; text-decoration: none; color: inherit; }}
     .news-title {{ display: block; font-size: 11px; line-height: 1.4; color: #1a1a1a; }}
     .news-item:hover .news-title {{ text-decoration: underline; }}
     .news-meta {{ display: block; font-size: 10px; color: #aaa; margin-top: 2px; }}
-    .news-loading {{ font-size: 10px; color: #ccc; }}
   </style>
 </head>
 <body>
@@ -546,6 +555,11 @@ function stopMonitor() {
     <div class="chart-section">
       <div class="chart-section-title">3-month price history</div>
       <div class="chart-grid" id="chart-grid"></div>
+    </div>
+    <div class="news-section" id="news-section" style="display:none">
+      <hr class="divider">
+      <div class="chart-section-title">latest news</div>
+      <div class="news-grid" id="news-grid"></div>
     </div>
   </div>
   {script_tag}
