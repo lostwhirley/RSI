@@ -286,7 +286,7 @@ function showAlertBanner(alerts, phone, testMode, smsSent) {
   var lines = alerts.map(a =>
     a.ticker + ": RSI " + a.rsi + " (" + (a.rsi > CFG.RSI_HIGH ? "overbought" : "oversold") + ")"
   ).join(", ");
-  var smsNote = phone ? (smsSent ? " \\u00b7 text sent" : " \\u00b7 text failed") : "";
+  var smsNote = phone && smsSent ? " \\u00b7 text sent" : "";
   banner.className = "alert-banner" + (testMode ? " test" : "");
   banner.textContent = (testMode ? "[test] " : "") + "Alert \\u2014 " + lines + smsNote;
 }

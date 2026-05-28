@@ -104,7 +104,11 @@
       <div class="chart-grid" id="chart-grid"></div>
     </div>
   </div>
+<<<<<<< Updated upstream
   <script>const CFG={"tickers": ["AAPL", "AMZN", "ASML", "BTC-USD", "GDXU", "GGLL", "GLW", "GOOG", "JNUG", "META", "MU", "MUU", "MSFT", "NVDA", "NVDL", "SPXL", "TQQQ", "TSM", "TSLA"], "RSI_PERIOD": 14, "RSI_LOW": 30, "RSI_HIGH": 70, "alertEmail": "lostwhirley@gmail.com", "ejsPublicKey": "_4ebKuY_HrA2_jJwh", "ejsServiceId": "email_service", "ejsTemplateId": "template_jvhlh2i", "phoneNumber": "5743836464", "smsGateway": "tmomail.net", "initResults": [{"ticker": "AAPL", "rsi": 79.19, "price": 311.19}, {"ticker": "AMZN", "rsi": 64.65, "price": 273.95}, {"ticker": "ASML", "rsi": 58.14, "price": 1609.96}, {"ticker": "BTC-USD", "rsi": 35.04, "price": 73311.04}, {"ticker": "GDXU", "rsi": 38.29, "price": 152.05}, {"ticker": "GGLL", "rsi": 60.44, "price": 140.11}, {"ticker": "GLW", "rsi": null, "price": null}, {"ticker": "GOOG", "rsi": 62.23, "price": 387.57}, {"ticker": "JNUG", "rsi": 40.57, "price": 174.58}, {"ticker": "META", "rsi": 56.79, "price": 634.75}, {"ticker": "MU", "rsi": 75.46, "price": 926.77}, {"ticker": "MUU", "rsi": 74.87, "price": 791.6}, {"ticker": "MSFT", "rsi": 59.77, "price": 426.51}, {"ticker": "NVDA", "rsi": 52.32, "price": 214.29}, {"ticker": "NVDL", "rsi": 50.68, "price": 105.67}, {"ticker": "SPXL", "rsi": 71.82, "price": 283.3}, {"ticker": "TQQQ", "rsi": 75.41, "price": 83.86}, {"ticker": "TSM", "rsi": 61.53, "price": 423.31}, {"ticker": "TSLA", "rsi": 63.26, "price": 443.27}]};
+=======
+  <script>const CFG={"tickers": ["AAPL", "AMZN", "ASML", "BTC-USD", "GDXU", "GGLL", "GLW", "GOOG", "JNUG", "META", "MU", "MUU", "MSFT", "NVDA", "NVDL", "SPXL", "TQQQ", "TSM", "TSLA"], "RSI_PERIOD": 14, "RSI_LOW": 30, "RSI_HIGH": 70, "alertEmail": "lostwhirley@gmail.com", "ejsPublicKey": "_4ebKuY_HrA2_jJwh", "ejsServiceId": "email_service", "ejsTemplateId": "template_jvhlh2i", "phoneNumber": "5743836464", "smsGateway": "tmomail.net", "initResults": [{"ticker": "AAPL", "rsi": null, "price": null}, {"ticker": "AMZN", "rsi": null, "price": null}, {"ticker": "ASML", "rsi": null, "price": null}, {"ticker": "BTC-USD", "rsi": null, "price": null}, {"ticker": "GDXU", "rsi": null, "price": null}, {"ticker": "GGLL", "rsi": null, "price": null}, {"ticker": "GLW", "rsi": null, "price": null}, {"ticker": "GOOG", "rsi": null, "price": null}, {"ticker": "JNUG", "rsi": null, "price": null}, {"ticker": "META", "rsi": null, "price": null}, {"ticker": "MU", "rsi": null, "price": null}, {"ticker": "MUU", "rsi": null, "price": null}, {"ticker": "MSFT", "rsi": null, "price": null}, {"ticker": "NVDA", "rsi": null, "price": null}, {"ticker": "NVDL", "rsi": null, "price": null}, {"ticker": "SPXL", "rsi": null, "price": null}, {"ticker": "TQQQ", "rsi": null, "price": null}, {"ticker": "TSM", "rsi": null, "price": null}, {"ticker": "TSLA", "rsi": null, "price": null}]};
+>>>>>>> Stashed changes
 let _timer = null, _countdown = null, _tickers = [];
 
 function computeRSI(closes) {
@@ -276,7 +280,7 @@ function showAlertBanner(alerts, phone, testMode, smsSent) {
   var lines = alerts.map(a =>
     a.ticker + ": RSI " + a.rsi + " (" + (a.rsi > CFG.RSI_HIGH ? "overbought" : "oversold") + ")"
   ).join(", ");
-  var smsNote = phone ? (smsSent ? " \u00b7 text sent" : " \u00b7 text failed") : "";
+  var smsNote = phone && smsSent ? " \u00b7 text sent" : "";
   banner.className = "alert-banner" + (testMode ? " test" : "");
   banner.textContent = (testMode ? "[test] " : "") + "Alert \u2014 " + lines + smsNote;
 }
