@@ -60,6 +60,8 @@
     .chart-card.chart-oversold { background: #E6F2FB; border-color: #90C4E8; }
     .chart-card-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
     .chart-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #888; }
+    .ticker-link { color: inherit; text-decoration: none; }
+    .ticker-link:hover { text-decoration: underline; }
     .chart-meta { font-size: 10px; color: #aaa; font-family: "SF Mono", "Fira Code", monospace; }
     .chart-sparkline { width: 100%; height: 44px; display: block; }
     .chart-rsi-label { font-size: 10px; color: #aaa; text-align: right; margin-top: 3px; }
@@ -191,8 +193,9 @@ function cardHTML(ticker, rsi, price) {
     rsiVal = rsi;
   }
   var priceHTML = price ? '<div class="card-price">$' + price + '</div>' : "";
+  var yhUrl = 'https://finance.yahoo.com/quote/' + ticker;
   return '<div class="' + cls + '" id="card-' + ticker + '">'
-    + '<div class="card-ticker">' + ticker + '</div>'
+    + '<div class="card-ticker"><a href="' + yhUrl + '" target="_blank" rel="noopener" class="ticker-link">' + ticker + '</a></div>'
     + '<div class="' + rsiCls + '">' + rsiVal + '</div>'
     + '<div class="' + sigCls + '">' + sigVal + '</div>'
     + priceHTML + '</div>';
@@ -239,8 +242,9 @@ function chartCardHTML(ticker, closes, rsi, price) {
   }
   var priceStr = price ? '$' + price : '';
   var rsiStr = (rsi !== null && rsi !== undefined) ? 'RSI ' + rsi : '';
+  var yhUrl = 'https://finance.yahoo.com/quote/' + ticker;
   return '<div class="' + cls + '" id="chart-' + ticker + '">'
-    + '<div class="chart-card-header"><span class="chart-label">' + ticker + '</span>'
+    + '<div class="chart-card-header"><span class="chart-label"><a href="' + yhUrl + '" target="_blank" rel="noopener" class="ticker-link">' + ticker + '</a></span>'
     + '<span class="chart-meta">' + priceStr + '</span></div>'
     + sparklineSVG(closes)
     + (rsiStr ? '<div class="chart-rsi-label">' + rsiStr + '</div>' : '')
