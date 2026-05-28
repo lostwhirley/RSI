@@ -260,7 +260,7 @@ function showAlertBanner(alerts, email, testMode, sent) {
   if (!banner) {
     banner = document.createElement("div");
     banner.id = "alert-banner";
-    document.getElementById("controls-section").insertAdjacentElement("beforebegin", banner);
+    document.getElementById("cards-grid").insertAdjacentElement("beforebegin", banner);
   }
   var lines = alerts.map(a =>
     a.ticker + ": RSI " + a.rsi + " (" + (a.rsi > CFG.RSI_HIGH ? "overbought" : "oversold") + ")"
@@ -401,17 +401,19 @@ function stopMonitor() {
     .sig-over {{ color: #A32D2D; }} .sig-under {{ color: #3B6D11; }} .sig-neutral {{ color: #888; }} .muted {{ color: #bbb; }}
     .card-price {{ font-size: 12px; color: #888; font-family: "SF Mono", "Fira Code", monospace; margin-top: 2px; }}
     .divider {{ border: none; border-top: 0.5px solid #e0ddd6; margin-bottom: 1.5rem; }}
-    .controls {{ display: flex; flex-direction: column; gap: 12px; }}
-    .fields-row {{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }}
+    .top-bar {{ display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 1.5rem; flex-wrap: wrap; }}
+    .top-bar-left {{ display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }}
+    .top-bar-right {{ display: flex; align-items: center; gap: 8px; }}
+    .alert-label {{ font-size: 12px; color: #888; white-space: nowrap; }}
+    .top-bar-right input {{ padding: 7px 10px; border: 0.5px solid #e0ddd6; border-radius: 8px; font-size: 13px; background: #fff; font-family: inherit; color: #1a1a1a; width: 210px; }}
+    .top-bar-right input:focus {{ outline: none; border-color: #999; }}
+    .controls {{ }}
     .field label {{ font-size: 12px; color: #888; display: block; margin-bottom: 4px; }}
-    .field input {{ width: 100%; padding: 8px 10px; border: 0.5px solid #e0ddd6; border-radius: 8px; font-size: 14px; background: #fff; font-family: inherit; color: #1a1a1a; }}
-    .field input:focus {{ outline: none; border-color: #999; }}
     .ticker-tags {{ display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border: 0.5px solid #e0ddd6; border-radius: 8px; background: #fff; min-height: 42px; align-items: center; }}
     .ticker-chip {{ display: inline-flex; align-items: center; gap: 3px; background: #ede9e3; border-radius: 5px; padding: 3px 7px 3px 9px; font-size: 12px; font-weight: 500; letter-spacing: .04em; }}
     .ticker-chip button {{ background: none; border: none; cursor: pointer; color: #999; font-size: 15px; line-height: 1; padding: 0 0 0 2px; }}
     .ticker-chip button:hover {{ color: #333; }}
     .ticker-input {{ border: none; outline: none; font-size: 13px; padding: 2px 0; min-width: 70px; background: transparent; font-family: inherit; }}
-    .buttons-row {{ display: flex; align-items: center; gap: 10px; }}
     .btn {{ padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid; font-family: inherit; background: #fff; }}
     .btn-start {{ border-color: #ccc; color: #1a1a1a; }} .btn-start:hover {{ border-color: #999; }}
     .btn-stop  {{ border-color: #E05050; color: #C0392B; }} .btn-stop:hover {{ background: #FFF5F5; }}
@@ -421,7 +423,7 @@ function stopMonitor() {
     #status-text {{ font-size: 12px; color: #aaa; }}
     .alert-banner {{ background: #FCEBEB; border: 1px solid #F09595; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #A32D2D; margin-bottom: 1rem; }}
     .alert-banner.test {{ background: #FFF8E8; border-color: #F0C070; color: #8A6000; }}
-    @media (max-width: 520px) {{ .fields-row {{ grid-template-columns: 1fr; }} }}
+    @media (max-width: 520px) {{ .top-bar {{ flex-direction: column; align-items: flex-start; }} .top-bar-right input {{ width: 100%; }} }}
     .chart-section {{ margin-top: 1.5rem; }}
     .chart-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }}
     .chart-card {{ background: #fff; border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 10px 12px 8px; }}
@@ -447,28 +449,28 @@ function stopMonitor() {
         </span>
       </div>
     </header>
-    <div class="cards" id="cards-grid"></div>
-    <hr class="divider">
-    <div class="controls" id="controls-section">
-      <div class="fields-row">
-        <div class="field">
-          <label>tickers</label>
-          <div class="ticker-tags" id="ticker-tags"></div>
-        </div>
-        <div class="field">
-          <label>alert recipient</label>
-          <input type="text" id="alert-email" value="{cfg['alertEmail'] or 'lostwhirley@gmail.com'}">
-        </div>
-      </div>
-      <div class="buttons-row">
+    <div class="top-bar">
+      <div class="top-bar-left">
         <button class="btn btn-start" id="start-btn" onclick="startMonitor()">Start</button>
         <div id="running-controls">
           <button class="btn btn-stop" onclick="stopMonitor()">Stop</button>
           <button class="btn btn-check" onclick="runCheck(true)">Check now</button>
           <span id="countdown"></span>
         </div>
+        <span id="status-text"></span>
       </div>
-      <div id="status-text"></div>
+      <div class="top-bar-right">
+        <span class="alert-label">alert recipient</span>
+        <input type="text" id="alert-email" value="{cfg['alertEmail'] or 'lostwhirley@gmail.com'}">
+      </div>
+    </div>
+    <div class="cards" id="cards-grid"></div>
+    <hr class="divider">
+    <div class="controls" id="controls-section">
+      <div class="field">
+        <label>tickers</label>
+        <div class="ticker-tags" id="ticker-tags"></div>
+      </div>
     </div>
     <div class="chart-section">
       <div class="chart-grid" id="chart-grid"></div>
