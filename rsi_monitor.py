@@ -33,7 +33,7 @@ def is_market_open() -> bool:
 
 def calculate_rsi(symbol: str) -> tuple[float | None, float | None]:
     ticker = yf.Ticker(symbol)
-    hist = ticker.history(period="5d", interval="5m")
+    hist = ticker.history(period="5d", interval="5m", auto_adjust=False)
     if hist.empty or len(hist) < RSI_PERIOD + 1:
         return None, None
 
@@ -42,8 +42,8 @@ def calculate_rsi(symbol: str) -> tuple[float | None, float | None]:
     gain  = delta.clip(lower=0)
     loss  = -delta.clip(upper=0)
 
-    avg_gain = gain.ewm(com=RSI_PERIOD - 1, min_periods=RSI_PERIOD).mean()
-    avg_loss = loss.ewm(com=RSI_PERIOD - 1, min_periods=RSI_PERIOD).mean()
+    avg_gain = gain.ewm(com=RSI_PERIOD - 1, min_periods=RSI_PERIOD, adjust=False).mean()
+    avg_loss = loss.ewm(com=RSI_PERIOD - 1, min_periods=RSI_PERIOD, adjust=False).mean()
 
     rs  = avg_gain / avg_loss
     rsi = 100 - (100 / (1 + rs))
@@ -345,7 +345,7 @@ function startCountdown(secs) {
   _countdown = setInterval(tick, 1000);
 }
 
-async function runCheck(forceRun) {
+async function runCheck(forceRun, noAlerts) {
   var testMode = document.getElementById("test-mode").checked;
   var tickers = getTickers();
   if (!forceRun && !testMode && !isMarketOpen()) {
@@ -368,7 +368,7 @@ async function runCheck(forceRun) {
   var alerts = results.filter(r => r.rsi !== null && (r.rsi < CFG.RSI_LOW || r.rsi > CFG.RSI_HIGH));
   var phone = document.getElementById("alert-phone").value.trim();
   var email = document.getElementById("alert-email").value.trim();
-  if (alerts.length) {
+  if (alerts.length && !noAlerts) {
     var smsSent   = await sendAlertSMS(alerts, phone, testMode);
     var emailSent = await sendAlertEmail(alerts, email, testMode);
     showAlertBanner(alerts, email, phone, testMode, smsSent, emailSent);
@@ -409,6 +409,7 @@ function stopMonitor() {
   document.getElementById("alert-email").value = CFG.alertEmail || "lostwhirley@gmail.com";
   updateMarketBadge();
   setInterval(updateMarketBadge, 60000);
+  runCheck(true, true);
 })();
 """
 
