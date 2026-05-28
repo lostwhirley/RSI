@@ -415,13 +415,13 @@ function stopMonitor() {
     .cards {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }}
     .card {{ background: #fff; border: 0.5px solid #e0ddd6; border-radius: 12px; padding: 16px 18px; }}
     .card.overbought {{ background: #FCEBEB; border-color: #F09595; }}
-    .card.oversold   {{ background: #EAF3DE; border-color: #C0DD97; }}
+    .card.oversold   {{ background: #E6F2FB; border-color: #90C4E8; }}
     .card-ticker {{ font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #888; margin-bottom: 8px; }}
     .card-rsi {{ font-size: 32px; font-weight: 500; font-family: "SF Mono", "Fira Code", monospace; line-height: 1; margin-bottom: 4px; }}
     .card-rsi.over    {{ color: #A32D2D; }} .card-rsi.under   {{ color: #3B6D11; }}
     .card-rsi.neutral {{ color: #555; }}    .card-rsi.empty   {{ color: #bbb; }}
     .card-signal {{ font-size: 11px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }}
-    .sig-over {{ color: #A32D2D; }} .sig-under {{ color: #3B6D11; }} .sig-neutral {{ color: #888; }} .muted {{ color: #bbb; }}
+    .sig-over {{ color: #A32D2D; }} .sig-under {{ color: #1A6FA8; }} .sig-neutral {{ color: #888; }} .muted {{ color: #bbb; }}
     .card-price {{ font-size: 12px; color: #888; font-family: "SF Mono", "Fira Code", monospace; margin-top: 2px; }}
     .divider {{ border: none; border-top: 0.5px solid #e0ddd6; margin-bottom: 1.5rem; }}
     .top-bar {{ display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 1.5rem; flex-wrap: wrap; }}
@@ -452,7 +452,7 @@ function stopMonitor() {
     .chart-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }}
     .chart-card {{ background: #fff; border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 10px 12px 8px; }}
     .chart-card.chart-overbought {{ background: #FCEBEB; border-color: #F09595; }}
-    .chart-card.chart-oversold {{ background: #EAF3DE; border-color: #C0DD97; }}
+    .chart-card.chart-oversold {{ background: #E6F2FB; border-color: #90C4E8; }}
     .chart-card-header {{ display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }}
     .chart-label {{ font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #888; }}
     .chart-meta {{ font-size: 10px; color: #aaa; font-family: "SF Mono", "Fira Code", monospace; }}
