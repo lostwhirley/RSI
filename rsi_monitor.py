@@ -254,7 +254,7 @@ function chartCardHTML(ticker, closes, rsi, price) {
     + '<span class="chart-meta">' + priceStr + '</span></div>'
     + sparklineSVG(closes)
     + (rsiStr ? '<div class="chart-rsi-label">' + rsiStr + '</div>' : '')
-    + '<div class="chart-news" id="news-' + ticker + '"><span class="news-loading">loading news…</span></div>'
+    + '<div class="chart-news" id="news-' + ticker + '" style="display:none"></div>'
     + '</div>';
 }
 
@@ -338,7 +338,7 @@ async function loadAllNews(tickers) {
     var articles = await fetchNews(t);
     var el = document.getElementById('news-' + t);
     if (!el) return;
-    if (!articles.length) { el.style.display = 'none'; return; }
+    if (!articles.length) return;
     el.innerHTML = articles.map(function(a) {
       var meta = (a.publisher || '') + (a.providerPublishTime ? ' · ' + timeAgo(a.providerPublishTime) : '');
       return '<a href="' + a.link + '" target="_blank" rel="noopener" class="news-item">'
@@ -346,6 +346,7 @@ async function loadAllNews(tickers) {
         + '<span class="news-meta">' + meta + '</span>'
         + '</a>';
     }).join('');
+    el.style.display = '';
   }));
 }
 
