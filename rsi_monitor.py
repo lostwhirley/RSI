@@ -398,7 +398,7 @@ function stopMonitor() {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RSI Monitor</title>
+  <title>Relative Strength Index (RSI 14)</title>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
     *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
@@ -463,7 +463,7 @@ function stopMonitor() {
 <body>
   <div class="container">
     <header>
-      <h1>RSI monitor</h1>
+      <h1>Relative Strength Index (RSI 14)</h1>
       <div class="header-right">
         <label class="test-label">
           <input type="checkbox" id="test-mode"> test mode
@@ -484,13 +484,13 @@ function stopMonitor() {
         <span id="status-text"></span>
       </div>
       <div class="top-bar-right">
-        <span class="alert-label">text to:</span>
+        <span class="alert-label">Text to:</span>
         <input type="text" id="alert-phone" placeholder="10-digit" style="width:140px">
       </div>
     </div>
     <div class="controls" id="controls-section">
       <div class="field">
-        <label>tickers</label>
+        <label>Tickers</label>
         <div class="ticker-tags" id="ticker-tags"></div>
       </div>
     </div>
