@@ -14,9 +14,11 @@ RSI_LOW    = 30
 RSI_HIGH   = 70
 # -----------------------
 
-EMAIL_FROM     = os.environ["EMAIL_FROM"]
-EMAIL_TO       = os.environ["EMAIL_TO"]
-EMAIL_PASSWORD = os.environ["EMAIL_PASSWORD"]
+EMAIL_FROM          = os.environ["EMAIL_FROM"]
+EMAIL_TO            = os.environ["EMAIL_TO"]
+EMAIL_PASSWORD      = os.environ["EMAIL_PASSWORD"]
+PHONE_TO            = os.environ.get("PHONE_TO", "")
+SMS_CARRIER_GATEWAY = "tmomail.net"
 
 
 def is_market_open() -> bool:
@@ -75,6 +77,23 @@ def send_email(alerts: list[dict]) -> None:
     print(f"Alert sent for: {[a['ticker'] for a in alerts]}")
 
 
+def send_sms(alerts: list[dict]) -> None:
+    if not PHONE_TO:
+        return
+    lines = ", ".join(
+        f"{a['ticker']} {a['rsi']} ({'overbought' if a['rsi'] > RSI_HIGH else 'oversold'})"
+        for a in alerts
+    )
+    msg = MIMEText(f"RSI Alert: {lines}", "plain")
+    msg["From"]    = EMAIL_FROM
+    msg["To"]      = f"{PHONE_TO}@{SMS_CARRIER_GATEWAY}"
+    msg["Subject"] = ""
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(EMAIL_FROM, EMAIL_PASSWORD)
+        server.sendmail(EMAIL_FROM, f"{PHONE_TO}@{SMS_CARRIER_GATEWAY}", msg.as_string())
+    print(f"SMS sent to {PHONE_TO}@{SMS_CARRIER_GATEWAY}")
+
+
 def generate_dashboard(results: list[dict], market_open: bool) -> None:
     init_results = [
         {"ticker": r["ticker"], "rsi": r.get("rsi"), "price": r.get("price")}
@@ -89,6 +108,8 @@ def generate_dashboard(results: list[dict], market_open: bool) -> None:
         "ejsPublicKey":     os.environ.get("EMAILJS_PUBLIC_KEY", ""),
         "ejsServiceId":     os.environ.get("EMAILJS_SERVICE_ID", ""),
         "ejsTemplateId":    os.environ.get("EMAILJS_TEMPLATE_ID", ""),
+        "phoneNumber":      PHONE_TO,
+        "smsGateway":       SMS_CARRIER_GATEWAY,
         "initResults":      init_results,
     }
     cfg_js = f"const CFG={json.dumps(cfg)};"
@@ -255,7 +276,7 @@ function setStatus(msg) {
   document.getElementById("status-text").textContent = msg;
 }
 
-function showAlertBanner(alerts, email, testMode, sent) {
+function showAlertBanner(alerts, email, phone, testMode, smsSent, emailSent) {
   var banner = document.getElementById("alert-banner");
   if (!banner) {
     banner = document.createElement("div");
@@ -265,11 +286,31 @@ function showAlertBanner(alerts, email, testMode, sent) {
   var lines = alerts.map(a =>
     a.ticker + ": RSI " + a.rsi + " (" + (a.rsi > CFG.RSI_HIGH ? "overbought" : "oversold") + ")"
   ).join(", ");
-  var emailNote = email
-    ? (sent ? " \\u00b7 email sent to " + email : " \\u00b7 email failed (check EmailJS config)")
-    : "";
+  var smsNote  = phone ? (smsSent  ? " \\u00b7 text sent" : " \\u00b7 text failed") : "";
+  var emailNote = email ? (emailSent ? " \\u00b7 email sent to " + email : " \\u00b7 email failed") : "";
   banner.className = "alert-banner" + (testMode ? " test" : "");
-  banner.textContent = (testMode ? "[test] " : "") + "Alert \\u2014 " + lines + emailNote;
+  banner.textContent = (testMode ? "[test] " : "") + "Alert \\u2014 " + lines + smsNote + emailNote;
+}
+
+async function sendAlertSMS(alerts, phone, testMode) {
+  if (!CFG.ejsPublicKey || !CFG.ejsServiceId || !CFG.ejsTemplateId || !phone) return false;
+  var digits = phone.replace(/\\D/g, '');
+  if (!digits) return false;
+  var smsAddr = digits + '@' + CFG.smsGateway;
+  var lines = alerts.map(function(a) {
+    return a.ticker + ' ' + a.rsi + ' (' + (a.rsi > CFG.RSI_HIGH ? 'overbought' : 'oversold') + ')';
+  }).join(', ');
+  try {
+    await emailjs.send(CFG.ejsServiceId, CFG.ejsTemplateId, {
+      to_email: smsAddr,
+      subject:  (testMode ? '[TEST] ' : '') + 'RSI Alert',
+      message:  (testMode ? '[TEST] ' : '') + 'RSI Alert: ' + lines
+    }, CFG.ejsPublicKey);
+    return true;
+  } catch(e) {
+    console.error('SMS error:', e);
+    return false;
+  }
 }
 
 async function sendAlertEmail(alerts, email, testMode) {
@@ -325,10 +366,12 @@ async function runCheck(forceRun) {
   var banner = document.getElementById("alert-banner");
   if (banner) banner.remove();
   var alerts = results.filter(r => r.rsi !== null && (r.rsi < CFG.RSI_LOW || r.rsi > CFG.RSI_HIGH));
+  var phone = document.getElementById("alert-phone").value.trim();
   var email = document.getElementById("alert-email").value.trim();
   if (alerts.length) {
-    var sent = await sendAlertEmail(alerts, email, testMode);
-    showAlertBanner(alerts, email, testMode, sent);
+    var smsSent   = await sendAlertSMS(alerts, phone, testMode);
+    var emailSent = await sendAlertEmail(alerts, email, testMode);
+    showAlertBanner(alerts, email, phone, testMode, smsSent, emailSent);
   }
   var now = new Date().toLocaleTimeString("en-US",
     { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit" });
@@ -362,6 +405,7 @@ function stopMonitor() {
   renderCharts(CFG.tickers, resultsMap);
   _tickers = CFG.tickers.slice();
   renderTickers();
+  document.getElementById("alert-phone").value = CFG.phoneNumber || "";
   document.getElementById("alert-email").value = CFG.alertEmail || "lostwhirley@gmail.com";
   updateMarketBadge();
   setInterval(updateMarketBadge, 60000);
@@ -460,7 +504,9 @@ function stopMonitor() {
         <span id="status-text"></span>
       </div>
       <div class="top-bar-right">
-        <span class="alert-label">alert recipient</span>
+        <span class="alert-label">phone</span>
+        <input type="text" id="alert-phone" placeholder="10-digit" style="width:130px">
+        <span class="alert-label">email</span>
         <input type="text" id="alert-email" value="{cfg['alertEmail'] or 'lostwhirley@gmail.com'}">
       </div>
     </div>
@@ -511,6 +557,7 @@ def main() -> None:
     generate_dashboard(results, market_open)
 
     if alerts:
+        send_sms(alerts)
         send_email(alerts)
     else:
         print("No alerts triggered.")
