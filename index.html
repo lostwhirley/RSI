@@ -354,7 +354,7 @@ function startMonitor() {
   renderCards(tickers, resultsMap);
   document.getElementById("start-btn").style.display = "none";
   document.getElementById("running-controls").style.display = "flex";
-  runCheck(false);
+  runCheck(true);
   startCountdown(5 * 60);
   _timer = setInterval(function() { runCheck(false); startCountdown(5 * 60); }, 5 * 60 * 1000);
 }
