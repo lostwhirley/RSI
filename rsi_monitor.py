@@ -33,7 +33,7 @@ def is_market_open() -> bool:
 
 def calculate_rsi(symbol: str) -> tuple[float | None, float | None]:
     ticker = yf.Ticker(symbol)
-    hist = ticker.history(period="5d", interval="5m", auto_adjust=False)
+    hist = ticker.history(period="3mo", interval="1d", auto_adjust=False)
     if hist.empty or len(hist) < RSI_PERIOD + 1:
         return None, None
 
@@ -133,7 +133,7 @@ function computeRSI(closes) {
 
 async function fetchRSI(sym) {
   var base = "https://query1.finance.yahoo.com/v8/finance/chart/" + sym
-    + "?interval=5m&range=5d&includePrePost=false";
+    + "?interval=1d&range=3mo&includePrePost=false";
   try {
     var r = await fetch("https://corsproxy.io/?" + encodeURIComponent(base));
     var data = await r.json();
