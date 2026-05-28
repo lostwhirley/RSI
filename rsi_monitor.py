@@ -448,6 +448,7 @@ function stopMonitor() {
     .alert-banner.test {{ background: #FFF8E8; border-color: #F0C070; color: #8A6000; }}
     @media (max-width: 520px) {{ .top-bar {{ flex-direction: column; align-items: flex-start; }} .top-bar-right input {{ width: 100%; }} }}
     .chart-section {{ margin-top: 1.5rem; }}
+    .chart-section-title {{ font-size: 12px; color: #888; margin-bottom: 10px; }}
     .chart-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }}
     .chart-card {{ background: #fff; border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 10px 12px 8px; }}
     .chart-card.chart-overbought {{ background: #FCEBEB; border-color: #F09595; }}
@@ -496,6 +497,7 @@ function stopMonitor() {
     <div class="cards" id="cards-grid"></div>
     <hr class="divider">
     <div class="chart-section">
+      <div class="chart-section-title">3-month price history</div>
       <div class="chart-grid" id="chart-grid"></div>
     </div>
   </div>
