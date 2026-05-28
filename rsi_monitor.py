@@ -405,7 +405,7 @@ function stopMonitor() {
   renderCharts(CFG.tickers, resultsMap);
   _tickers = CFG.tickers.slice();
   renderTickers();
-  document.getElementById("alert-phone").value = CFG.phoneNumber || "";
+  document.getElementById("alert-phone").value = CFG.phoneNumber || "5743836464";
   document.getElementById("alert-email").value = CFG.alertEmail || "lostwhirley@gmail.com";
   updateMarketBadge();
   setInterval(updateMarketBadge, 60000);
@@ -504,7 +504,7 @@ function stopMonitor() {
         <span id="status-text"></span>
       </div>
       <div class="top-bar-right">
-        <span class="alert-label">phone</span>
+        <span class="alert-label">text to:</span>
         <input type="text" id="alert-phone" placeholder="10-digit" style="width:130px">
         <span class="alert-label">email</span>
         <input type="text" id="alert-email" value="{cfg['alertEmail'] or 'lostwhirley@gmail.com'}">

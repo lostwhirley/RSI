@@ -88,7 +88,7 @@
         <span id="status-text"></span>
       </div>
       <div class="top-bar-right">
-        <span class="alert-label">phone</span>
+        <span class="alert-label">text to:</span>
         <input type="text" id="alert-phone" placeholder="10-digit" style="width:130px">
         <span class="alert-label">email</span>
         <input type="text" id="alert-email" value="lostwhirley@gmail.com">
@@ -106,7 +106,7 @@
       <div class="chart-grid" id="chart-grid"></div>
     </div>
   </div>
-  <script>const CFG={"tickers": ["AAPL", "AMZN", "ASML", "BTC-USD", "GDXU", "GGLL", "GLW", "GOOG", "JNUG", "META", "MU", "MUU", "MSFT", "NVDA", "NVDL", "SPXL", "TQQQ", "TSM", "TSLA"], "RSI_PERIOD": 14, "RSI_LOW": 30, "RSI_HIGH": 70, "alertEmail": "lostwhirley@gmail.com", "ejsPublicKey": "_4ebKuY_HrA2_jJwh", "ejsServiceId": "email_service", "ejsTemplateId": "template_jvhlh2i", "phoneNumber": "6505551234", "smsGateway": "tmomail.net", "initResults": [{"ticker": "AAPL", "rsi": null, "price": null}, {"ticker": "AMZN", "rsi": null, "price": null}, {"ticker": "ASML", "rsi": null, "price": null}, {"ticker": "BTC-USD", "rsi": null, "price": null}, {"ticker": "GDXU", "rsi": null, "price": null}, {"ticker": "GGLL", "rsi": null, "price": null}, {"ticker": "GLW", "rsi": null, "price": null}, {"ticker": "GOOG", "rsi": null, "price": null}, {"ticker": "JNUG", "rsi": null, "price": null}, {"ticker": "META", "rsi": null, "price": null}, {"ticker": "MU", "rsi": null, "price": null}, {"ticker": "MUU", "rsi": null, "price": null}, {"ticker": "MSFT", "rsi": null, "price": null}, {"ticker": "NVDA", "rsi": null, "price": null}, {"ticker": "NVDL", "rsi": null, "price": null}, {"ticker": "SPXL", "rsi": null, "price": null}, {"ticker": "TQQQ", "rsi": null, "price": null}, {"ticker": "TSM", "rsi": null, "price": null}, {"ticker": "TSLA", "rsi": null, "price": null}]};
+  <script>const CFG={"tickers": ["AAPL", "AMZN", "ASML", "BTC-USD", "GDXU", "GGLL", "GLW", "GOOG", "JNUG", "META", "MU", "MUU", "MSFT", "NVDA", "NVDL", "SPXL", "TQQQ", "TSM", "TSLA"], "RSI_PERIOD": 14, "RSI_LOW": 30, "RSI_HIGH": 70, "alertEmail": "lostwhirley@gmail.com", "ejsPublicKey": "_4ebKuY_HrA2_jJwh", "ejsServiceId": "email_service", "ejsTemplateId": "template_jvhlh2i", "phoneNumber": "5743836464", "smsGateway": "tmomail.net", "initResults": [{"ticker": "AAPL", "rsi": 56.92, "price": 311.26}, {"ticker": "AMZN", "rsi": 38.21, "price": 268.87}, {"ticker": "ASML", "rsi": 34.06, "price": 1585.08}, {"ticker": "BTC-USD", "rsi": 31.16, "price": 72787.05}, {"ticker": "GDXU", "rsi": 10.63, "price": 131.71}, {"ticker": "GGLL", "rsi": 37.38, "price": 137.02}, {"ticker": "GLW", "rsi": 35.18, "price": 187.9}, {"ticker": "GOOG", "rsi": 37.22, "price": 383.4}, {"ticker": "JNUG", "rsi": 14.78, "price": 158.3}, {"ticker": "META", "rsi": 63.74, "price": 636.03}, {"ticker": "MU", "rsi": 41.57, "price": 910.37}, {"ticker": "MUU", "rsi": 38.86, "price": 760.55}, {"ticker": "MSFT", "rsi": 86.91, "price": 422.67}, {"ticker": "NVDA", "rsi": 49.82, "price": 212.63}, {"ticker": "NVDL", "rsi": 48.6, "price": 104.0}, {"ticker": "SPXL", "rsi": 46.78, "price": 277.78}, {"ticker": "TQQQ", "rsi": 42.23, "price": 81.11}, {"ticker": "TSM", "rsi": 37.91, "price": 417.02}, {"ticker": "TSLA", "rsi": 41.87, "price": 437.65}]};
 let _timer = null, _countdown = null, _tickers = [];
 
 function computeRSI(closes) {
@@ -397,7 +397,7 @@ function stopMonitor() {
   renderCharts(CFG.tickers, resultsMap);
   _tickers = CFG.tickers.slice();
   renderTickers();
-  document.getElementById("alert-phone").value = CFG.phoneNumber || "";
+  document.getElementById("alert-phone").value = CFG.phoneNumber || "5743836464";
   document.getElementById("alert-email").value = CFG.alertEmail || "lostwhirley@gmail.com";
   updateMarketBadge();
   setInterval(updateMarketBadge, 60000);
