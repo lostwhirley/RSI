@@ -431,7 +431,7 @@ function stopMonitor() {
     .top-bar-right input {{ padding: 7px 10px; border: 0.5px solid #e0ddd6; border-radius: 8px; font-size: 13px; background: #fff; font-family: inherit; color: #1a1a1a; width: 210px; }}
     .top-bar-right input:focus {{ outline: none; border-color: #999; }}
     .controls {{ }}
-    .field label {{ font-size: 12px; color: #888; display: block; margin-bottom: 4px; }}
+    .field label {{ font-size: 12px; color: #888; display: block; margin-bottom: 8px; }}
     .ticker-tags {{ display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border: 0.5px solid #e0ddd6; border-radius: 8px; background: #fff; min-height: 42px; align-items: center; }}
     .ticker-chip {{ display: inline-flex; align-items: center; gap: 3px; background: #ede9e3; border-radius: 5px; padding: 3px 7px 3px 9px; font-size: 12px; font-weight: 500; letter-spacing: .04em; }}
     .ticker-chip button {{ background: none; border: none; cursor: pointer; color: #999; font-size: 15px; line-height: 1; padding: 0 0 0 2px; }}
@@ -448,7 +448,7 @@ function stopMonitor() {
     .alert-banner.test {{ background: #FFF8E8; border-color: #F0C070; color: #8A6000; }}
     @media (max-width: 520px) {{ .top-bar {{ flex-direction: column; align-items: flex-start; }} .top-bar-right input {{ width: 100%; }} }}
     .chart-section {{ margin-top: 1.5rem; }}
-    .chart-section-title {{ font-size: 12px; color: #888; margin-bottom: 10px; }}
+    .chart-section-title {{ font-size: 12px; color: #888; margin-bottom: 10px; text-align: center; }}
     .chart-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }}
     .chart-card {{ background: #fff; border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 10px 12px 8px; }}
     .chart-card.chart-overbought {{ background: #FCEBEB; border-color: #F09595; }}
@@ -490,7 +490,7 @@ function stopMonitor() {
     </div>
     <div class="controls" id="controls-section">
       <div class="field">
-        <label>Tickers</label>
+        <label>Stocks</label>
         <div class="ticker-tags" id="ticker-tags"></div>
       </div>
     </div>
