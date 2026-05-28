@@ -276,7 +276,7 @@ function setStatus(msg) {
   document.getElementById("status-text").textContent = msg;
 }
 
-function showAlertBanner(alerts, email, phone, testMode, smsSent, emailSent) {
+function showAlertBanner(alerts, phone, testMode, smsSent) {
   var banner = document.getElementById("alert-banner");
   if (!banner) {
     banner = document.createElement("div");
@@ -286,10 +286,9 @@ function showAlertBanner(alerts, email, phone, testMode, smsSent, emailSent) {
   var lines = alerts.map(a =>
     a.ticker + ": RSI " + a.rsi + " (" + (a.rsi > CFG.RSI_HIGH ? "overbought" : "oversold") + ")"
   ).join(", ");
-  var smsNote  = phone ? (smsSent  ? " \\u00b7 text sent" : " \\u00b7 text failed") : "";
-  var emailNote = email ? (emailSent ? " \\u00b7 email sent to " + email : " \\u00b7 email failed") : "";
+  var smsNote = phone ? (smsSent ? " \\u00b7 text sent" : " \\u00b7 text failed") : "";
   banner.className = "alert-banner" + (testMode ? " test" : "");
-  banner.textContent = (testMode ? "[test] " : "") + "Alert \\u2014 " + lines + smsNote + emailNote;
+  banner.textContent = (testMode ? "[test] " : "") + "Alert \\u2014 " + lines + smsNote;
 }
 
 async function sendAlertSMS(alerts, phone, testMode) {
@@ -313,24 +312,6 @@ async function sendAlertSMS(alerts, phone, testMode) {
   }
 }
 
-async function sendAlertEmail(alerts, email, testMode) {
-  if (!CFG.ejsPublicKey || !CFG.ejsServiceId || !CFG.ejsTemplateId || !email) return false;
-  var lines = alerts.map(a =>
-    a.ticker + ": RSI " + a.rsi + " (" + (a.rsi > CFG.RSI_HIGH ? "overbought" : "oversold") + ")"
-  ).join("\\n");
-  try {
-    await emailjs.send(CFG.ejsServiceId, CFG.ejsTemplateId, {
-      to_email: email,
-      subject:  (testMode ? "[TEST] " : "") + "RSI Alert",
-      message:  "The following stocks crossed RSI thresholds:\\n\\n" + lines
-                + "\\n\\nThresholds: oversold < " + CFG.RSI_LOW + ", overbought > " + CFG.RSI_HIGH
-    }, CFG.ejsPublicKey);
-    return true;
-  } catch(e) {
-    console.error("EmailJS error:", e);
-    return false;
-  }
-}
 
 function startCountdown(secs) {
   clearInterval(_countdown);
@@ -367,11 +348,9 @@ async function runCheck(forceRun, noAlerts) {
   if (banner) banner.remove();
   var alerts = results.filter(r => r.rsi !== null && (r.rsi < CFG.RSI_LOW || r.rsi > CFG.RSI_HIGH));
   var phone = document.getElementById("alert-phone").value.trim();
-  var email = document.getElementById("alert-email").value.trim();
   if (alerts.length && !noAlerts) {
-    var smsSent   = await sendAlertSMS(alerts, phone, testMode);
-    var emailSent = await sendAlertEmail(alerts, email, testMode);
-    showAlertBanner(alerts, email, phone, testMode, smsSent, emailSent);
+    var smsSent = await sendAlertSMS(alerts, phone, testMode);
+    showAlertBanner(alerts, phone, testMode, smsSent);
   }
   var now = new Date().toLocaleTimeString("en-US",
     { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit" });
@@ -406,7 +385,6 @@ function stopMonitor() {
   _tickers = CFG.tickers.slice();
   renderTickers();
   document.getElementById("alert-phone").value = CFG.phoneNumber || "5743836464";
-  document.getElementById("alert-email").value = CFG.alertEmail || "lostwhirley@gmail.com";
   updateMarketBadge();
   setInterval(updateMarketBadge, 60000);
   runCheck(true, true);
@@ -506,9 +484,7 @@ function stopMonitor() {
       </div>
       <div class="top-bar-right">
         <span class="alert-label">text to:</span>
-        <input type="text" id="alert-phone" placeholder="10-digit" style="width:130px">
-        <span class="alert-label">email</span>
-        <input type="text" id="alert-email" value="{cfg['alertEmail'] or 'lostwhirley@gmail.com'}">
+        <input type="text" id="alert-phone" placeholder="10-digit" style="width:140px">
       </div>
     </div>
     <div class="cards" id="cards-grid"></div>
