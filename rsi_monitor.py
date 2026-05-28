@@ -8,7 +8,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 # --- Configure these ---
-TICKERS    = ["AAPL", "AMZN", "ASML", "BTC-USD", "GDXU", "GGLL", "GLW", "GOOG", "JNUG", "META", "MU", "MUU", "MSFT", "NVDA", "NVDL", "SPXL", "TQQQ", "TSM", "TSLA"]
+TICKERS    = ["^IXIC", "AAPL", "AMZN", "ASML", "BTC-USD", "DPST", "GDXU", "GGLL", "GLW", "GOOG", "JNUG", "META", "MU", "MUU", "MSFT", "NVDA", "NVDL", "SPXL", "TQQQ", "TSM", "TSLA"]
 RSI_PERIOD = 14
 RSI_LOW    = 30
 RSI_HIGH   = 70
@@ -254,6 +254,7 @@ function chartCardHTML(ticker, closes, rsi, price) {
     + '<span class="chart-meta">' + priceStr + '</span></div>'
     + sparklineSVG(closes)
     + (rsiStr ? '<div class="chart-rsi-label">' + rsiStr + '</div>' : '')
+    + '<div class="chart-news" id="news-' + ticker + '"><span class="news-loading">loading news…</span></div>'
     + '</div>';
 }
 
@@ -315,6 +316,39 @@ async function sendAlertSMS(alerts, phone, testMode) {
 }
 
 
+function timeAgo(ts) {
+  var s = Math.floor(Date.now() / 1000 - ts);
+  if (s < 3600)  return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+  return Math.floor(s / 86400) + 'd ago';
+}
+
+async function fetchNews(ticker) {
+  try {
+    var url = 'https://query1.finance.yahoo.com/v1/finance/search?q='
+      + encodeURIComponent(ticker) + '&newsCount=3&enableFuzzyQuery=false';
+    var r = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
+    var d = await r.json();
+    return (d.news || []).slice(0, 3);
+  } catch(e) { return []; }
+}
+
+async function loadAllNews(tickers) {
+  await Promise.all(tickers.map(async function(t) {
+    var articles = await fetchNews(t);
+    var el = document.getElementById('news-' + t);
+    if (!el) return;
+    if (!articles.length) { el.style.display = 'none'; return; }
+    el.innerHTML = articles.map(function(a) {
+      var meta = (a.publisher || '') + (a.providerPublishTime ? ' · ' + timeAgo(a.providerPublishTime) : '');
+      return '<a href="' + a.link + '" target="_blank" rel="noopener" class="news-item">'
+        + '<span class="news-title">' + a.title + '</span>'
+        + '<span class="news-meta">' + meta + '</span>'
+        + '</a>';
+    }).join('');
+  }));
+}
+
 function startCountdown(secs) {
   clearInterval(_countdown);
   var rem = secs;
@@ -346,6 +380,7 @@ async function runCheck(forceRun, noAlerts) {
   }
   results.forEach(r => updateCard(r.ticker, r.rsi, r.price));
   results.forEach(r => updateChart(r.ticker, r.closes, r.rsi, r.price));
+  loadAllNews(tickers);
   var banner = document.getElementById("alert-banner");
   if (banner) banner.remove();
   var alerts = results.filter(r => r.rsi !== null && (r.rsi < CFG.RSI_LOW || r.rsi > CFG.RSI_HIGH));
@@ -384,6 +419,7 @@ function stopMonitor() {
   CFG.initResults.forEach(r => { resultsMap[r.ticker] = r; });
   renderCards(CFG.tickers, resultsMap);
   renderCharts(CFG.tickers, resultsMap);
+  loadAllNews(CFG.tickers);
   _tickers = CFG.tickers.slice();
   renderTickers();
   document.getElementById("alert-phone").value = CFG.phoneNumber || "5743836464";
@@ -462,6 +498,12 @@ function stopMonitor() {
     .chart-meta {{ font-size: 10px; color: #aaa; font-family: "SF Mono", "Fira Code", monospace; }}
     .chart-sparkline {{ width: 100%; height: 44px; display: block; }}
     .chart-rsi-label {{ font-size: 10px; color: #aaa; text-align: right; margin-top: 3px; }}
+    .chart-news {{ margin-top: 8px; border-top: 0.5px solid #e8e5de; padding-top: 8px; display: flex; flex-direction: column; gap: 7px; }}
+    .news-item {{ display: block; text-decoration: none; color: inherit; }}
+    .news-title {{ display: block; font-size: 11px; line-height: 1.4; color: #1a1a1a; }}
+    .news-item:hover .news-title {{ text-decoration: underline; }}
+    .news-meta {{ display: block; font-size: 10px; color: #aaa; margin-top: 2px; }}
+    .news-loading {{ font-size: 10px; color: #ccc; }}
   </style>
 </head>
 <body>
